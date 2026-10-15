@@ -1,11 +1,14 @@
-const STORAGE_KEY = 'workshop-projects-v1';
-let projects = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-function persist() { localStorage.setItem(STORAGE_KEY, JSON.stringify(projects)); }
+async function request(path, options = {}) {
+  const response = await fetch(path, options);
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || `Request failed (${response.status})`);
+  return data;
+}
 const store = {
-  async list() { return projects; },
-  async create(project) { const saved = { id: crypto.randomUUID(), ...project }; projects.push(saved); persist(); return saved; },
-  async update(id, project) { const index = projects.findIndex(p => p.id === id); projects[index] = { id, ...project }; persist(); return projects[index]; },
-  async remove(id) { projects = projects.filter(p => p.id !== id); persist(); }
+  list: () => request('/api/projects'),
+  create: project => request('/api/projects', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(project) }),
+  update: (id, project) => request(`/api/projects/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(project) }),
+  remove: id => request(`/api/projects/${id}`, { method: 'DELETE' })
 };
 const form = document.querySelector('#project-form');
 const nameInput = document.querySelector('#name');
